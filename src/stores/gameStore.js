@@ -48,6 +48,9 @@ const useGameStore = create((set, get) => ({
         players: res.data.players || [],
         logs: res.data.logs || []
       });
+      // 保留 actingPlayerIndex 的当前值，避免轮询时被覆盖
+      const currentIndex = get().actingPlayerIndex;
+      set({ actingPlayerIndex: currentIndex });
     }
   },
 

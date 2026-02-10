@@ -12,7 +12,7 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-const PlayerCard = ({ player, isSelected, onClick, isTargetable, showRole, speech, isActing }) => {
+const PlayerCard = ({ player, isSelected, onClick, onSpeechClick, isTargetable, showRole, speech, isActing }) => {
   const getRoleIcon = () => {
     if (!player.f_is_alive) return <Skull className="w-6 h-6 text-red-600/60" />;
     
@@ -60,7 +60,14 @@ const PlayerCard = ({ player, isSelected, onClick, isTargetable, showRole, speec
           duration: 1.5,
           ease: "easeInOut"
         } : {}}
-        onClick={() => player.f_is_alive && onClick?.(player)}
+        onClick={(e) => {
+          if (!player.f_is_alive) return;
+          if (onSpeechClick) {
+            onSpeechClick(e);
+          } else {
+            onClick?.(player);
+          }
+        }}
         className={cn(
           "relative rounded-2xl border-2 flex flex-col items-center justify-center transition-all p-1 cursor-pointer select-none aspect-square",
           player.f_is_alive 

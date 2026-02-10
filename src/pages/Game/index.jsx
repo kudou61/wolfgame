@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Moon, Sun, Settings, MessageSquare, BookOpen, Play, Info, Loader2, Skull, Users, ArrowRight, LogOut, LayoutGrid, List, Eye } from 'lucide-react';
+import { Moon, Sun, MessageSquare, Play, Loader2, Skull, Users, LogOut, LayoutGrid, Eye, MessageSquare as MessageIcon } from 'lucide-react';
 import useGameStore from '@/stores/gameStore.js';
 import PlayerCard from '@/components/PlayerCard.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,11 +24,13 @@ const Game = () => {
     isGodMode, setGodMode, actingPlayerIndex, setActingPlayerIndex 
   } = useGameStore();
   
-  const [activeTab, setActiveTab] = useState('chat'); 
+  const [activeTab, setActiveTab] = useState('chat');
   const [selectedTarget, setSelectedTarget] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [thinkingContent, setThinkingContent] = useState('');
   const [humanSpeech, setHumanSpeech] = useState('');
+  const [speechDialog, setSpeechDialog] = useState(null); // { player, content, position: { x, y } }
+  const [logPanelHeight, setLogPanelHeight] = useState(() => window.innerHeight * 0.6); // 移动端日志面板高度（默认70%）
   const logEndRef = useRef(null);
   const logContainerRef = useRef(null);
   const isAtBottom = useRef(true);
@@ -36,14 +38,6 @@ const Game = () => {
   // 核心锁：防止并发执行和重复执行同一阶段
   const processingRef = useRef(false);
   const processedStepsRef = useRef(new Set());
-
-  // 响应式检测
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // 轮询游戏状态
   useEffect(() => {
@@ -300,15 +294,42 @@ ${roleDistributionText}
 ${historyContext}
 
 [行动指令]
-请分析局势，选择今晚杀害的目标。只需返回玩家编号，如 "3"。
+请分析局势，选择今晚杀害的目标。
+请严格按格式输出：[内心想法] 你的分析和理由 (杀害) 玩家编号
+示例：[内心想法] 3号是预言家，必须尽早除掉。(杀害) 3
+
 策略提示：
 1. 优先击杀威胁大的神职人员（如预言家、女巫）。
-2. 也可以考虑“自刀”来骗取女巫的灵药，或者通过击杀行为制造混乱。
+2. 也可以考虑"自刀"来骗取女巫的灵药，或者通过击杀行为制造混乱。
 3. 分析发言记录，找出谁最怀疑你们，或者谁最被大家信任。`;
 
       const res = await callAI(systemPrompt, prompt);
-      const match = res.match(/\d+/);
-      targetIdx = match ? parseInt(match[0]) : aliveGood[0].f_player_index;
+
+      // 解析内心想法和杀害目标
+      const thoughtMatch = res.match(/[\[【(（](?:内心想法|思考|想法)[\]】)）]\s*([\s\S]*?)\s*(?=[\[【(（](?:杀害|击杀)[\]】)）]|$)/i);
+      const killMatch = res.match(/[\[【(（](?:杀害|击杀)[\]】)）]\s*(\d+)/i);
+
+      let thought = thoughtMatch ? thoughtMatch[1].trim() : "";
+      targetIdx = killMatch ? parseInt(killMatch[1]) : null;
+
+      // 如果没匹配到格式，尝试直接找数字
+      if (!targetIdx) {
+        const fallbackMatch = res.match(/\d+/);
+        targetIdx = fallbackMatch ? parseInt(fallbackMatch[0]) : aliveGood[0].f_player_index;
+      }
+
+      // 记录内心想法
+      if (thought) {
+        await addLog({
+          gameId: id,
+          type: 'thought',
+          content: thought,
+          visibility: 'werewolf',
+          playerIndex: activeWolves[0]?.f_player_index,
+          day: game.f_day_count,
+          phase: 'night'
+        });
+      }
     } catch (e) {
       targetIdx = aliveGood[Math.floor(Math.random() * aliveGood.length)].f_player_index;
     }
@@ -363,11 +384,37 @@ ${roleDistributionText}
 ${historyContext}
 
 [行动指令]
-请选择一人查验。只需返回玩家编号，如 "3"。`;
+请选择一人查验。
+请严格按格式输出：[内心想法] 你的分析和理由 (查验) 玩家编号
+示例：[内心想法] 3号发言很可疑，我想先查验他。(查验) 3`;
 
       const res = await callAI(systemPrompt, prompt);
-      const match = res.match(/\d+/);
-      targetIdx = match ? parseInt(match[0]) : targets[0].f_player_index;
+
+      // 解析内心想法和查验目标
+      const thoughtMatch = res.match(/[\[【(（](?:内心想法|思考|想法)[\]】)）]\s*([\s\S]*?)\s*(?=[\[【(（](?:查验)[\]】)）]|$)/i);
+      const checkMatch = res.match(/[\[【(（](?:查验)[\]】)）]\s*(\d+)/i);
+
+      let thought = thoughtMatch ? thoughtMatch[1].trim() : "";
+      targetIdx = checkMatch ? parseInt(checkMatch[1]) : null;
+
+      // 如果没匹配到格式，尝试直接找数字
+      if (!targetIdx) {
+        const fallbackMatch = res.match(/\d+/);
+        targetIdx = fallbackMatch ? parseInt(fallbackMatch[0]) : targets[0].f_player_index;
+      }
+
+      // 记录内心想法
+      if (thought) {
+        await addLog({
+          gameId: id,
+          type: 'thought',
+          content: thought,
+          visibility: `private_${seer.f_player_index}`,
+          playerIndex: seer.f_player_index,
+          day: game.f_day_count,
+          phase: 'night'
+        });
+      }
     } catch (e) {
       targetIdx = targets[Math.floor(Math.random() * targets.length)].f_player_index;
     }
@@ -375,7 +422,7 @@ ${historyContext}
     const finalTarget = players.find(p => p.f_player_index === targetIdx) || targets[0];
     const isWolf = finalTarget.f_role === 'werewolf';
     checkedIndices.push(finalTarget.f_player_index);
-    
+
     await addLog({ gameId: id, type: 'action', content: `查验了 ${finalTarget.f_player_index}号，其身份为：${isWolf ? '狼人' : '好人'}`, visibility: `private_${seer.f_player_index}`, phase: 'night', day: game.f_day_count, playerIndex: seer.f_player_index });
     await updatePlayer({ playerId: seer.f_id, statusData: { ...statusData, check_history: checkedIndices } });
     await advanceStep('witch'); 
@@ -418,12 +465,50 @@ ${roleDistributionText}
 ${historyContext}
 
 [行动指令]
-请决定今晚的行动：1. 救人 (save) 2. 毒人 (poison) 3. 不动 (skip)。
-请严格按 JSON 格式输出，例如：{"action": "save"} 或 {"action": "poison", "target": 5}。`;
+请决定今晚的行动。
+请严格按格式输出：[内心想法] 你的分析和理由 (行动) 动作类型 [目标]
+支持的行动：
+- (救人) save - 只有今晚有玩家被杀时才能使用
+- (毒人) poison 后面跟目标玩家编号，如 (毒人) 3
+- (不动) skip - 不使用任何药水
+
+示例：
+[内心想法] 3号是预言家，今晚他被杀了，我要救他。(救人)
+[内心想法] 5号发言像狼人，我要毒死他。(毒人) 5
+[内心想法] 不太确定，今晚先不动。(不动)`;
 
       const res = await callAI(systemPrompt, prompt);
-      const jsonMatch = res.match(/\{.*\}/);
-      if (jsonMatch) aiDecision = JSON.parse(jsonMatch[0]);
+
+      // 解析内心想法和行动
+      const thoughtMatch = res.match(/[\[【(（](?:内心想法|思考|想法)[\]】)）]\s*([\s\S]*?)\s*(?=[\[【(（](?:救人|毒人|不动)[\]】)）]|$)/i);
+      const actionMatch = res.match(/[\[【(（](?:救人|毒人|不动)[\]】)）](?:\s*(\d+))?/i);
+
+      let thought = thoughtMatch ? thoughtMatch[1].trim() : "";
+      const actionType = actionMatch ? actionMatch[1].trim() : 'skip';
+      const actionTarget = actionMatch && actionMatch[2] ? parseInt(actionMatch[2]) : null;
+
+      // 转换为之前的决策格式
+      if (actionType === '救人' || actionType === 'save') {
+        aiDecision = { action: 'save' };
+      } else if ((actionType === '毒人' || actionType === 'poison') && actionTarget) {
+        aiDecision = { action: 'poison', target: actionTarget };
+      } else {
+        aiDecision = { action: 'skip' };
+      }
+
+      // 记录内心想法
+      if (thought) {
+        await addLog({
+          gameId: id,
+          type: 'thought',
+          content: thought,
+          visibility: `private_${witch.f_player_index}`,
+          playerIndex: witch.f_player_index,
+          day: game.f_day_count,
+          phase: 'night'
+        });
+      }
+
       console.log(`[game] Witch AI Decision:`, aiDecision);
     } catch (e) { console.error('[game] Witch AI Error', e); }
 
@@ -1024,6 +1109,10 @@ ${historyContext}
     setIsProcessing(false);
   };
 
+  const handleShowSpeech = (player, content, position) => {
+    setSpeechDialog({ player, content, position });
+  };
+
   const handleSelectPlayer = (player) => {
     // 如果点击的是已选中的玩家，则取消选中；否则选中该玩家
     if (selectedTarget?.f_id === player.f_id) {
@@ -1033,10 +1122,32 @@ ${historyContext}
     }
   };
 
+  // 处理日志面板拖动调整高度
+  const handleLogPanelDrag = (e) => {
+    const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+    const newHeight = window.innerHeight - clientY;
+    setLogPanelHeight(Math.max(200, Math.min(window.innerHeight - 100, newHeight)));
+  };
+
+  const startLogPanelDrag = (e) => {
+    e.preventDefault();
+    document.addEventListener('mousemove', handleLogPanelDrag);
+    document.addEventListener('touchmove', handleLogPanelDrag);
+    document.addEventListener('mouseup', stopLogPanelDrag);
+    document.addEventListener('touchend', stopLogPanelDrag);
+  };
+
+  const stopLogPanelDrag = () => {
+    document.removeEventListener('mousemove', handleLogPanelDrag);
+    document.removeEventListener('touchmove', handleLogPanelDrag);
+    document.removeEventListener('mouseup', stopLogPanelDrag);
+    document.removeEventListener('touchend', stopLogPanelDrag);
+  };
+
   if (!game) return <div className="flex-1 flex items-center justify-center bg-slate-950"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>;
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-slate-950 text-white overflow-hidden">
+    <div className="flex flex-col lg:flex-row lg:h-screen w-full bg-slate-950 text-white lg:overflow-hidden">
       {/* 左侧/顶部：状态与舞台 */}
       <div className="flex flex-col h-[18vh] lg:h-full lg:w-1/4 lg:border-r border-slate-800 bg-slate-900/40 backdrop-blur-xl z-20 shrink-0">
         {/* 顶部状态栏 */}
@@ -1169,7 +1280,7 @@ ${historyContext}
       </div>
 
       {/* 中间：玩家阵列 */}
-      <div className="h-[32vh] lg:h-full lg:flex-1 flex flex-col bg-slate-950 p-4 lg:p-8 overflow-y-auto shrink-0 border-b lg:border-b-0 border-slate-800/50">
+      <div className="min-h-[calc(100vh-18vh-120px)] lg:h-full lg:flex-1 flex flex-col bg-slate-950 p-4 lg:p-8 lg:overflow-y-auto shrink-0 border-b lg:border-b-0 border-slate-800/50">
         <div className="flex items-center justify-between mb-3 lg:mb-6">
           <h3 className="text-[10px] lg:text-sm font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <Users className="w-3 h-3 lg:w-4 h-4" /> 幸存者名单
@@ -1197,6 +1308,13 @@ ${historyContext}
                   player={p}
                   isSelected={selectedTarget?.f_id === p.f_id}
                   onClick={handleSelectPlayer}
+                  onSpeechClick={latestSpeech ? (e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    handleShowSpeech(p, latestSpeech, {
+                      x: rect.left + rect.width / 2,
+                      y: rect.bottom + 10
+                    });
+                  } : undefined}
                   isTargetable={me?.f_is_alive && (game.f_current_phase === 'night' || game.f_current_step === 'voting' || game.f_current_step === 'hunter_shot')}
                   showRole={shouldShowRole(p)}
                   speech={latestSpeech}
@@ -1211,8 +1329,8 @@ ${historyContext}
         </div>
       </div>
 
-      {/* 右侧：日志与交互 (在移动端占据剩余空间) */}
-      <div className="flex-1 min-h-0 lg:w-1/3 flex flex-col bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 shadow-2xl z-30 overflow-hidden">
+      {/* 右侧：日志与交互 (移动端为弹出层，PC端为固定面板) */}
+      <div className="hidden lg:flex flex-1 min-h-0 lg:w-1/3 flex-col bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 shadow-2xl z-30 overflow-hidden">
         {/* 标签切换 */}
         <div className="flex justify-around py-2 lg:py-4 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
           <button onClick={() => setActiveTab('chat')} className={cn("flex items-center gap-2 px-4 py-1.5 lg:py-2 rounded-xl transition-all font-black text-[10px] lg:text-xs uppercase tracking-widest", activeTab === 'chat' ? "bg-primary text-white" : "text-slate-500 hover:text-slate-300")}>
@@ -1331,6 +1449,173 @@ ${historyContext}
           )}
         </div>
       </div>
+
+      {/* 移动端底部交互操作区 */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800/50 p-4 z-[60]">
+        {me?.f_is_alive ? (
+          <div className="flex flex-col gap-3">
+            {game.f_current_step === 'discussion' ? (
+              <div className="flex flex-col gap-2">
+                <div className="relative">
+                  <textarea
+                    value={humanSpeech}
+                    onChange={(e) => setHumanSpeech(e.target.value)}
+                    placeholder="输入你的发言内容..."
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white outline-none focus:border-primary transition-all resize-none h-20"
+                  />
+                  <button
+                    disabled={!humanSpeech.trim() || isProcessing}
+                    onClick={() => handleHumanAction('speech')}
+                    className="absolute bottom-2 right-2 p-2 bg-primary text-white rounded-lg disabled:opacity-30"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : game.f_current_step === 'witch' && me?.f_role === 'witch' ? (
+              <div className="grid grid-cols-2 gap-2">
+                <button disabled={!selectedTarget || isProcessing || me.f_status_data.potions?.save === 0 || nightAction?.killed !== selectedTarget?.f_player_index} onClick={() => handleHumanAction('save')} className="py-2.5 rounded-xl bg-emerald-600 text-white font-black text-[10px] disabled:opacity-30">灵药 ({me.f_status_data.potions?.save})</button>
+                <button disabled={!selectedTarget || isProcessing || me.f_status_data.potions?.kill === 0} onClick={() => handleHumanAction('poison')} className="py-2.5 rounded-xl bg-red-600 text-white font-black text-[10px] disabled:opacity-30">毒药 ({me.f_status_data.potions?.kill})</button>
+                <button onClick={skipAction} className="col-span-2 py-1.5 rounded-xl bg-slate-800 text-slate-500 font-bold text-[9px] border border-slate-700">跳过行动</button>
+              </div>
+            ) : (
+              <button disabled={!selectedTarget || isProcessing} onClick={() => handleHumanAction()} className={cn("w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95 disabled:opacity-40", game.f_current_phase === 'night' ? "bg-red-600 shadow-red-600/20" : "bg-primary shadow-primary/20")}>
+                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                <span className="uppercase tracking-widest">确认行动</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="py-3 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-xl bg-slate-900/50">
+            <div className="flex items-center gap-2 mb-1">
+              {isGodMode ? (
+                <Eye className="w-5 h-5 text-primary animate-pulse" />
+              ) : (
+                <Users className="w-5 h-5 text-slate-500" />
+              )}
+              <span className="text-xs font-black text-white uppercase tracking-tighter">
+                {isGodMode ? '上帝视角已开启' : '观察者模式'}
+              </span>
+            </div>
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest text-center px-4">
+              {isGodMode
+                ? '你可以看到所有玩家的身份、内心想法和夜晚行动'
+                : '你正在以普通观众身份观看比赛'}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* 移动端日志面板 */}
+      {(
+        <div
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-[50] bg-slate-900 border-t border-slate-800 shadow-2xl flex flex-col"
+          style={{ height: `${logPanelHeight}px` }}
+        >
+          {/* 拖动条 */}
+          <div
+            onMouseDown={startLogPanelDrag}
+            onTouchStart={startLogPanelDrag}
+            className="absolute top-0 left-0 right-0 h-6 bg-slate-800/50 flex items-center justify-center cursor-ns-resize hover:bg-slate-700/50 transition-colors z-[55]"
+          >
+            <div className="w-12 h-1 bg-slate-600 rounded-full" />
+          </div>
+
+          {/* 标签切换 */}
+          <div className="flex justify-around py-2 pt-8 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
+            <button onClick={() => setActiveTab('chat')} className={cn("flex items-center gap-2 px-4 py-1.5 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest", activeTab === 'chat' ? "bg-primary text-white" : "text-slate-500 hover:text-slate-300")}>
+              <MessageSquare className="w-3.5 h-3.5" /> 战报
+            </button>
+            <button onClick={() => setActiveTab('notes')} className={cn("flex items-center gap-2 px-4 py-1.5 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest", activeTab === 'notes' ? "bg-primary text-white" : "text-slate-500 hover:text-slate-300")}>
+              <LayoutGrid className="w-3.5 h-3.5" /> 笔记
+            </button>
+          </div>
+
+          {/* 日志内容 */}
+          <div ref={logContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            {activeTab === 'chat' ? (
+              <>
+                {logs.filter(shouldShowLog).map((log, idx) => (
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} key={log.f_id || idx} className={cn("flex flex-col", log.f_type === 'system' ? "items-center my-2" : "items-start")}>
+                    {log.f_type === 'system' ? (
+                      <div className="bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800 text-[9px] font-bold text-slate-400 tracking-tight">{log.f_content}</div>
+                    ) : (
+                      <div className="flex gap-2 max-w-[95%]">
+                        <div className="w-6 h-6 rounded-lg bg-slate-950 border border-slate-800 flex-shrink-0 flex items-center justify-center text-[9px] font-black text-slate-500">{log.f_player_index || '?'}</div>
+                        <div className="flex flex-col gap-1">
+                          <div className={cn(
+                            "rounded-xl rounded-tl-none p-2 text-[10px] leading-relaxed border shadow-lg",
+                            log.f_type === 'thinking' ? "bg-indigo-950/30 border-indigo-500/20 text-indigo-300/80 italic" :
+                            log.f_type === 'action' ? "bg-indigo-900/40 border-indigo-500/30 text-indigo-100" :
+                            "bg-slate-800 border-slate-700 text-slate-200"
+                          )}>
+                            {log.f_type === 'thinking' && <span className="font-black mr-1 not-italic text-indigo-400/60">[内心想法]</span>}
+                            {log.f_content}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+
+                {thinkingContent && (
+                  <div className="flex items-center gap-2 text-primary animate-pulse py-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span className="text-[9px] font-black uppercase tracking-widest italic">{thinkingContent}</span>
+                  </div>
+                )}
+                <div ref={logEndRef} />
+              </>
+            ) : (
+              <div className="space-y-2">
+                {players.map(p => (
+                  <div key={p.f_id} className="bg-slate-950/50 p-3 rounded-xl flex items-center justify-between border border-slate-800 group hover:border-primary/30 transition-all">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-slate-900 flex items-center justify-center text-[10px] font-black text-slate-500 group-hover:text-primary">{p.f_player_index}</div>
+                      <span className="text-[10px] font-bold text-slate-300">{p.f_name}</span>
+                    </div>
+                    <select className="bg-slate-900 border border-slate-800 rounded-lg px-1.5 py-0.5 text-[9px] font-bold text-slate-500 outline-none cursor-pointer">
+                      <option>未知</option><option>🐺 狼人</option><option>🔮 预言家</option><option>🧪 女巫</option><option>🏹 猎人</option><option>👨‍🌾 村民</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 发言内容悬浮框（移动端） */}
+      <AnimatePresence>
+        {speechDialog && (
+          <>
+            {/* 点击外部关闭 */}
+            <div
+              className="fixed inset-0 z-[90]"
+              onClick={() => setSpeechDialog(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="fixed z-[100] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-4 min-w-[200px] max-w-[250px]"
+              style={{
+                left: `${Math.max(16, Math.min(window.innerWidth - 216, speechDialog.position?.x - 125))}px`,
+                top: `${Math.min(window.innerHeight - 150, speechDialog.position?.y || 0)}px`
+              }}
+            >
+              <div className="font-black text-primary mb-2 uppercase tracking-widest text-[9px] flex items-center gap-1.5">
+                <MessageIcon className="w-3 h-3" />
+                {speechDialog.player.f_player_index}号玩家发言
+              </div>
+              <p className="text-xs text-slate-200 leading-relaxed">
+                {speechDialog.content}
+              </p>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
