@@ -17,6 +17,15 @@ const Result = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLogsOpen, setIsLogsOpen] = useState(false);
 
+  const handleShare = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success('链接已复制到剪贴板');
+    }).catch(() => {
+      toast.error('复制失败，请手动复制');
+    });
+  };
+
   useEffect(() => {
     fetchGameData(id);
     document.title = '对局结算 - 狼人乱斗';
@@ -81,41 +90,41 @@ const Result = () => {
           </motion.div>
         </div>
 
-        <div className="max-w-6xl mx-auto w-full p-6 lg:p-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-6xl mx-auto w-full p-4 lg:p-12 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* 左侧：玩家列表 */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[2.5rem] backdrop-blur-xl">
-              <h2 className="text-sm font-black text-slate-500 mb-8 flex items-center gap-3 uppercase tracking-widest">
-                <Award className="w-5 h-5 text-primary" /> 身份揭秘
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-slate-900/50 border border-slate-800 p-4 lg:p-8 rounded-[2.5rem] backdrop-blur-xl">
+              <h2 className="text-xs lg:text-sm font-black text-slate-500 mb-4 lg:mb-8 flex items-center gap-2 lg:gap-3 uppercase tracking-widest">
+                <Award className="w-4 lg:w-5 h-4 lg:h-5 text-primary" /> 身份揭秘
               </h2>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 lg:grid-cols-2 gap-2 lg:gap-3">
                 {players.map(p => (
                   <div key={p.f_id} className={clsx(
-                    "bg-slate-950/50 p-4 rounded-2xl border flex flex-col items-center text-center group transition-all relative overflow-hidden",
+                    "bg-slate-950/50 p-2 lg:p-4 rounded-xl lg:rounded-2xl border flex flex-col items-center text-center group transition-all relative overflow-hidden",
                     p.f_is_alive ? "border-slate-800 hover:border-primary/30" : "border-red-900/30 opacity-60 grayscale-[0.5]"
                   )}>
                     {!p.f_is_alive && (
-                      <div className="absolute top-0 right-0 p-1 bg-red-500/20 rounded-bl-xl">
-                        <Skull className="w-3 h-3 text-red-500" />
+                      <div className="absolute top-1 lg:top-2 right-1 lg:right-2 p-0.5 lg:p-1 bg-red-500/20 rounded-bl-xl">
+                        <Skull className="w-2.5 lg:w-3 h-2.5 lg:h-3 text-red-500" />
                       </div>
                     )}
-                    <div className="text-[10px] text-slate-500 font-black mb-2">#{p.f_player_index}</div>
+                    <div className="text-[9px] lg:text-[10px] text-slate-500 font-black mb-1 lg:mb-2">#{p.f_player_index}</div>
                     <div className={clsx(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center mb-3 border transition-transform",
+                      "w-8 lg:w-12 h-8 lg:h-12 rounded-xl lg:rounded-2xl flex items-center justify-center mb-2 lg:mb-3 border transition-transform",
                       p.f_is_alive ? "bg-slate-900 border-slate-800 group-hover:scale-110" : "bg-slate-950 border-red-900/20"
                     )}>
-                       <User className={clsx("w-6 h-6", p.f_is_alive ? "text-slate-400" : "text-slate-600")} />
+                       <User className={clsx("w-3.5 lg:w-6 h-3.5 lg:h-6", p.f_is_alive ? "text-slate-400" : "text-slate-600")} />
                     </div>
-                    <div className="text-xs font-black truncate w-full mb-2">{p.f_name}</div>
-                    <div className="flex flex-col gap-1 w-full">
+                    <div className="text-[9px] lg:text-xs font-black truncate w-full mb-1 lg:mb-2">{p.f_name}</div>
+                    <div className="flex flex-col gap-0.5 lg:gap-1 w-full">
                       <div className={clsx(
-                        "text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-tighter",
+                        "text-[8px] lg:text-[10px] px-1.5 lg:px-3 py-0.5 lg:py-1 rounded-full font-black uppercase tracking-tighter",
                         p.f_role === 'werewolf' ? "bg-red-500/20 text-red-400" : "bg-emerald-500/20 text-emerald-400"
                       )}>
                         {p.f_role === 'werewolf' ? '狼人' : p.f_role === 'seer' ? '预言家' : p.f_role === 'witch' ? '女巫' : p.f_role === 'hunter' ? '猎人' : '村民'}
                       </div>
                       <div className={clsx(
-                        "text-[9px] font-black uppercase tracking-widest py-0.5 rounded",
+                        "text-[8px] lg:text-[9px] font-black uppercase tracking-widest py-0 lg:py-0.5 rounded",
                         p.f_is_alive ? "text-emerald-500/80" : "text-red-500/80"
                       )}>
                         {p.f_is_alive ? '存活' : '已出局'}
@@ -128,46 +137,46 @@ const Result = () => {
           </div>
 
           {/* 右侧：AI复盘 */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[2.5rem] backdrop-blur-xl h-full flex flex-col">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-sm font-black text-slate-500 flex items-center gap-3 uppercase tracking-widest">
-                  <FileText className="w-5 h-5 text-primary" /> AI 首席分析师复盘
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-slate-900/50 border border-slate-800 p-4 lg:p-8 rounded-[2.5rem] backdrop-blur-xl h-full flex flex-col">
+              <div className="flex items-center justify-between mb-4 lg:mb-8">
+                <h2 className="text-xs lg:text-sm font-black text-slate-500 flex items-center gap-2 lg:gap-3 uppercase tracking-widest">
+                  <FileText className="w-4 lg:w-5 h-4 lg:h-5 text-primary" /> AI 首席分析师复盘
                 </h2>
-                <div className="flex items-center gap-4">
-                  <button onClick={() => setIsLogsOpen(true)} className="text-xs text-slate-400 font-black hover:text-white flex items-center gap-2 uppercase tracking-tighter transition-colors">
-                    <ScrollText className="w-4 h-4" /> 查看对局日志
+                <div className="flex items-center gap-2 lg:gap-4">
+                  <button onClick={() => setIsLogsOpen(true)} className="text-[10px] lg:text-xs text-slate-400 font-black hover:text-white flex items-center gap-1 lg:gap-2 uppercase tracking-tighter transition-colors">
+                    <ScrollText className="w-3 lg:w-4 h-3 lg:h-4" /> 查看对局日志
                   </button>
                   {summary && !isGenerating && (
-                    <button onClick={() => generateReview(id)} className="text-xs text-primary font-black hover:underline flex items-center gap-2 uppercase tracking-tighter">
-                      <RefreshCcw className="w-4 h-4" /> 重新生成
+                    <button onClick={() => generateReview(id)} className="text-[10px] lg:text-xs text-primary font-black hover:underline flex items-center gap-1 lg:gap-2 uppercase tracking-tighter">
+                      <RefreshCcw className="w-3 lg:w-4 h-3 lg:h-4" /> 重新生成
                     </button>
                   )}
                 </div>
               </div>
-              
+
               <div className="flex-1">
                 {isGenerating ? (
-                  <div className="h-full flex flex-col items-center justify-center py-24">
-                    <div className="relative mb-8">
-                      <div className="w-20 h-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                  <div className="h-full flex flex-col items-center justify-center py-12 lg:py-24">
+                    <div className="relative mb-4 lg:mb-8">
+                      <div className="w-12 lg:w-20 h-12 lg:h-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <Star className="w-8 h-8 text-primary animate-pulse" />
+                        <Star className="w-4 lg:w-8 h-4 lg:h-8 text-primary animate-pulse" />
                       </div>
                     </div>
                     <div className="text-center">
-                      <p className="text-lg font-black text-white uppercase tracking-[0.3em] mb-2">Analyzing Battle Logs</p>
-                      <p className="text-sm text-slate-500 animate-pulse">正在深度解构对局博弈逻辑，请稍候...</p>
+                      <p className="text-base lg:text-lg font-black text-white uppercase tracking-[0.3em] mb-2">Analyzing Battle Logs</p>
+                      <p className="text-xs lg:text-sm text-slate-500 animate-pulse">正在深度解构对局博弈逻辑，请稍候...</p>
                     </div>
                   </div>
                 ) : summary ? (
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="prose prose-invert prose-slate max-w-none text-slate-300 bg-slate-950/50 p-8 rounded-3xl border border-slate-800 shadow-inner overflow-y-auto max-h-[600px] custom-scrollbar">
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="prose prose-invert prose-sm lg:prose-slate max-w-none text-slate-300 bg-slate-950/50 p-3 lg:p-8 rounded-2xl lg:rounded-3xl border border-slate-800 shadow-inner overflow-y-auto max-h-[60vh] lg:max-h-[600px] custom-scrollbar">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary}</ReactMarkdown>
                   </motion.div>
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center py-24 opacity-20">
-                    <FileText className="w-16 h-16 mb-4" />
-                    <p className="text-lg font-black uppercase tracking-widest">暂无复盘数据</p>
+                  <div className="h-full flex flex-col items-center justify-center py-12 lg:py-24 opacity-20">
+                    <FileText className="w-10 lg:w-16 h-10 lg:h-16 mb-2 lg:mb-4" />
+                    <p className="text-base lg:text-lg font-black uppercase tracking-widest">暂无复盘数据</p>
                   </div>
                 )}
               </div>
@@ -185,7 +194,7 @@ const Result = () => {
           <button onClick={() => setIsLogsOpen(true)} className="px-4 lg:px-6 py-3 lg:py-4 bg-slate-900 text-white rounded-xl lg:rounded-2xl font-black text-sm lg:text-base flex items-center justify-center gap-2 border border-slate-800 hover:bg-slate-800 transition-all shadow-lg whitespace-nowrap">
             <ScrollText className="w-4 h-4 lg:w-5 lg:h-5 text-slate-400" /> 日志
           </button>
-          <button onClick={() => toast.success('战报已复制到剪贴板')} className="px-4 lg:px-6 py-3 lg:py-4 bg-primary text-white rounded-xl lg:rounded-2xl font-black text-sm lg:text-base flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] active:scale-95 transition-all whitespace-nowrap">
+          <button onClick={handleShare} className="px-4 lg:px-6 py-3 lg:py-4 bg-primary text-white rounded-xl lg:rounded-2xl font-black text-sm lg:text-base flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] active:scale-95 transition-all whitespace-nowrap">
             <Share2 className="w-4 h-4 lg:w-5 lg:h-5" /> 分享
           </button>
         </div>

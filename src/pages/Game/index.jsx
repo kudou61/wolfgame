@@ -1394,7 +1394,7 @@ ${historyContext}
         </div>
 
         {/* 交互操作区 */}
-        <div className="p-4 lg:p-6 bg-slate-950 border-t border-slate-800/50 shrink-0">
+        <div className="p-4 pb-[calc(16px+env(safe-area-inset-bottom))] lg:p-6 bg-slate-950 border-t border-slate-800/50 shrink-0">
           {me?.f_is_alive ? (
             <div className="flex flex-col gap-3 lg:gap-4">
               {game.f_current_step === 'discussion' ? (
@@ -1509,7 +1509,7 @@ ${historyContext}
       {/* 移动端日志面板 */}
       {(
         <div
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-[50] bg-slate-900 border-t border-slate-800 shadow-2xl flex flex-col"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-[50] bg-slate-900 border-t border-slate-800 shadow-2xl flex flex-col pb-[env(safe-area-inset-bottom)]"
           style={{ height: `${logPanelHeight}px` }}
         >
           {/* 拖动条 */}
@@ -1602,7 +1602,7 @@ ${historyContext}
               className="fixed z-[100] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-4 min-w-[200px] max-w-[250px]"
               style={{
                 left: `${Math.max(16, Math.min(window.innerWidth - 216, speechDialog.position?.x - 125))}px`,
-                top: `${Math.min(window.innerHeight - 150, speechDialog.position?.y || 0)}px`
+                top: `${Math.min(window.innerHeight - 150 - (window.innerHeight - speechDialog.position?.y < window.innerHeight * 0.7 ? 0 : parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-bottom') || '0')), speechDialog.position?.y || 0)}px`
               }}
             >
               <div className="font-black text-primary mb-2 uppercase tracking-widest text-[9px] flex items-center gap-1.5">

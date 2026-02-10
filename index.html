@@ -2,7 +2,12 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- PWA适配 -->
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="狼人乱斗">
     <title>狼人乱斗 - AI博弈平台</title>
     <!-- Tailwind CSS v4 Runtime 脚本，用于本地开发环境实时编译样式 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -42,9 +47,13 @@
             background-color: #0a0a0a; /* 默认深色背景，适配游戏氛围 */
             color: #ffffff;
             overflow-x: hidden;
+            /* PWA安全区域适配 */
+            padding-bottom: env(safe-area-inset-bottom);
         }
         #root {
             min-height: 100vh;
+            /* PWA安全区域适配 */
+            padding-bottom: env(safe-area-inset-bottom);
         }
         /* 优化滚动条样式 */
         ::-webkit-scrollbar {
@@ -60,6 +69,10 @@
         }
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.3);
+        }
+        /* 移动端固定元素安全区域适配 */
+        .fixed {
+            padding-bottom: env(safe-area-inset-bottom);
         }
     </style>
 </head>
