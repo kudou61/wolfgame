@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  werewolf:
+    build: .
+    container_name: werewolf
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_PATH=/app/data/werewolf.db
+      - ADMIN_WORK_NO=88158
+    restart: unless-stopped

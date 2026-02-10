@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狼人乱斗 - AI博弈平台</title>
+    <!-- Tailwind CSS v4 Runtime 脚本，用于本地开发环境实时编译样式 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- <script>
+        // 配置 Tailwind 主题以匹配项目设计
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'hsl(222.2 47.4% 11.2%)',
+                        'primary-foreground': 'hsl(210 40% 98%)',
+                        secondary: 'hsl(210 40% 96.1%)',
+                        'secondary-foreground': 'hsl(222.2 47.4% 11.2%)',
+                        border: 'hsl(214.3 31.8% 91.4%)',
+                        input: 'hsl(214.3 31.8% 91.4%)',
+                        ring: 'hsl(222.2 84% 4.9%)',
+                        background: 'hsl(0 0% 100%)',
+                        foreground: 'hsl(222.2 84% 4.9%)',
+                    },
+                    borderRadius: {
+                        lg: 'var(--radius)',
+                        md: 'calc(var(--radius) - 2px)',
+                        sm: 'calc(var(--radius) - 4px)',
+                    }
+                }
+            }
+        }
+    </script> -->
+    <style>
+        :root {
+            --radius: 0.5rem;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #0a0a0a; /* 默认深色背景，适配游戏氛围 */
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        #root {
+            min-height: 100vh;
+        }
+        /* 优化滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <!-- 模块化引入 React 入口文件 -->
+    <script type="module" src="/src/index.jsx"></script>
+</body>
+</html>
