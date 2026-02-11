@@ -15,7 +15,7 @@ const Setup = () => {
   const navigate = useNavigate();
   const { aiConfigs, fetchAIConfigs, initGame, createAIConfig, deleteAIConfig } = useGameStore();
   
-  const [playerCount, setPlayerCount] = useState(12);
+  const [playerCount, setPlayerCount] = useState(6);
   const [includeHuman, setIncludeHuman] = useState(false);
   const [gameSpeed, setGameSpeed] = useState('standard');
   const [roles, setRoles] = useState({

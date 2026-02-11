@@ -47,6 +47,13 @@ const Game = () => {
     return () => clearInterval(timer);
   }, [id]);
 
+  // 检查游戏是否已结束，如果是则跳转到结果页面
+  useEffect(() => {
+    if (game && game.f_status === 'finished') {
+      navigate(`/result/${id}`);
+    }
+  }, [game?.f_status, id, navigate]);
+
   // 处理滚动事件
   const handleScroll = () => {
     if (!logContainerRef.current) return;
@@ -283,7 +290,7 @@ const Game = () => {
         })
         .join('\n');
 
-      const systemPrompt = `你是一群狼人的领袖。你的目标是消灭所有好人。作为狼人，你需要通过隐蔽、欺骗和策略来赢得比赛。`;
+      const systemPrompt = `你是狼人杀游戏玩家，你的身份是狼人，你的目标是消灭所有好人。作为狼人，你需要通过隐蔽、欺骗和策略来赢得比赛。`;
       const prompt = `你是${activeWolves[0]?.f_player_index}号(狼人)。
 ${roleDistributionText}
 当前阶段：${currentStageName}
@@ -454,7 +461,7 @@ ${historyContext}
         })
         .join('\n');
 
-      const systemPrompt = `你是女巫。你拥有一瓶灵药和一瓶毒药，你的目标是保护好人并消灭狼人。`;
+      const systemPrompt = `你是狼人杀的游戏玩家，你的角色是女巫。你拥有一瓶灵药和一瓶毒药，你的目标是保护好人并消灭狼人，带领好人阵营胜利，在游戏前期玩家身份不明确时，由于狼人自刀概率小，你更倾向于救人，可以保全更多好人，请按照游戏策略进行行动。`;
       const prompt = `你是${witch.f_player_index}号(女巫)。
 ${roleDistributionText}
 当前阶段：${currentStageName}
@@ -478,14 +485,17 @@ ${historyContext}
 [内心想法] 不太确定，今晚先不动。(不动)`;
 
       const res = await callAI(systemPrompt, prompt);
+      console.log(`[game] === [AI Response] ===\n[game] ${res}`);
 
       // 解析内心想法和行动
       const thoughtMatch = res.match(/[\[【(（](?:内心想法|思考|想法)[\]】)）]\s*([\s\S]*?)\s*(?=[\[【(（](?:救人|毒人|不动)[\]】)）]|$)/i);
-      const actionMatch = res.match(/[\[【(（](?:救人|毒人|不动)[\]】)）](?:\s*(\d+))?/i);
+      const actionMatch = res.match(/[\[【(（](救人|毒人|不动)[\]】)）](?:\s*(\d+))?/i);
 
       let thought = thoughtMatch ? thoughtMatch[1].trim() : "";
       const actionType = actionMatch ? actionMatch[1].trim() : 'skip';
       const actionTarget = actionMatch && actionMatch[2] ? parseInt(actionMatch[2]) : null;
+
+      console.log(`[game] Parsed - thought: "${thought}", actionType: "${actionType}", actionTarget: ${actionTarget}`);
 
       // 转换为之前的决策格式
       if (actionType === '救人' || actionType === 'save') {
@@ -603,7 +613,7 @@ ${historyContext}
 
           const aliveIndices = targets.map(p => p.f_player_index);
 
-          const systemPrompt = `你是猎人。你临死前可以开枪带走一名玩家。你的目标是帮助好人阵营获胜。`;
+          const systemPrompt = `你是狼人杀游戏玩家，你的身份是猎人。你临死前可以开枪带走一名玩家。你的目标是帮助好人阵营获胜。`;
           const prompt = `你是${hunter.f_player_index}号(猎人)。
 ${roleDistributionText}
 当前阶段：${currentStageName}
@@ -1509,7 +1519,7 @@ ${historyContext}
       {/* 移动端日志面板 */}
       {(
         <div
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-[50] bg-slate-900 border-t border-slate-800 shadow-2xl flex flex-col pb-[env(safe-area-inset-bottom)]"
+          className="lg:hidden fixed bottom-20 left-0 right-0 z-[50] bg-slate-900 border-t border-slate-800 shadow-2xl flex flex-col pb-[env(safe-area-inset-bottom)]"
           style={{ height: `${logPanelHeight}px` }}
         >
           {/* 拖动条 */}
