@@ -1,0 +1,15 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "wolf-weixin-miniprogram",
+  "description": "狼人乱斗微信小程序",
+  "appid": "touristappid",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": true,
+    "compileHotReLoad": false,
+    "postcss": true,
+    "minified": true
+  },
+  "compileType": "miniprogram"
+}

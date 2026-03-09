@@ -1,0 +1,12 @@
+@import './styles/variables.scss';
+
+page {
+  background-color: $color-bg-primary;
+  color: $color-text-primary;
+  font-size: $font-md;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}

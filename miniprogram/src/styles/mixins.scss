@@ -1,0 +1,66 @@
+@import './variables.scss';
+
+// Flex 布局
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// 卡片样式
+@mixin card {
+  background-color: $color-bg-secondary;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-md;
+}
+
+// 按钮样式
+@mixin button-base {
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-lg;
+  font-size: $font-md;
+  transition: opacity 0.2s;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+@mixin button-primary {
+  @include button-base;
+  background-color: $color-primary;
+  color: $color-text-primary;
+}
+
+@mixin button-danger {
+  @include button-base;
+  background-color: $color-danger;
+  color: $color-text-primary;
+}
+
+// 文本省略
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-ellipsis-multi($lines: 2) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $lines;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
