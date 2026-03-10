@@ -60,5 +60,30 @@ export const gameApi = {
   deleteGame: (id) => api.delete(`/api/games/${id}`),
 
   // 执行游戏动作
-  performAction: (gameId, action) => api.post(`/api/games/${gameId}/actions`, action)
+  performAction: (gameId, action) => api.post(`/api/games/${gameId}/actions`, action),
+
+  // 添加游戏日志
+  addLog: (data) => api.post('/game/log', data),
+
+  // 更新游戏状态
+  updateGameStatus: (data) => api.post('/game/update-status', data),
+
+  // 更新玩家信息
+  updatePlayer: (data) => api.post('/game/update-player', data),
+
+  // 生成游戏复盘
+  generateReview: (id) => api.post(`/game/${id}/review-generate`)
+}
+
+// AI 相关 API
+export const aiAPI = {
+  getAIConfigs: () => api.get('/ai-configs'),
+  createAIConfig: (data) => api.post('/ai-configs', data),
+  deleteAIConfig: (id) => api.delete(`/ai-configs/${id}`),
+  completion: (data) => api.post('/ai/completion', data),
+  batchVoteCompletion: (requests) => {
+    return Promise.all(
+      requests.map(req => api.post('/ai/completion', req))
+    )
+  }
 }

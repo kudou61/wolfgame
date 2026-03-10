@@ -64,3 +64,35 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+// 玻璃态效果
+@mixin glass-morphism {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+
+// 竞技场网格布局
+@mixin arena-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240rpx, 1fr));
+  gap: $spacing-xl;
+}
+
+// 自定义滚动条
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 12rpx;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $color-border;
+    border-radius: 20rpx;
+
+    &:hover {
+      background: #475569;
+    }
+  }
+}

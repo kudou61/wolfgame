@@ -36,3 +36,15 @@ $font-2xl: 48rpx;
 $shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 $shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
 $shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
+
+// 游戏特定颜色（从 theme.js 转换）
+$color-werewolf: #ef4444;
+$color-good: #22c55e;
+$color-night: #1e1b4b;
+$color-day: #fef08a;
+
+// 其他主题颜色
+$color-accent: #d4af37;
+$color-accent-foreground: #1a1a2a;
+$color-border: #334155;
+$color-ring: #6366f1;
