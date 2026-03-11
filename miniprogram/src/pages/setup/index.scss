@@ -1,0 +1,8 @@
+@import '@/styles/variables.scss';
+@import '@/styles/mixins.scss';
+
+.setup-container {
+  min-height: 100vh;
+  background-color: $color-bg-primary;
+  padding: 32rpx;
+}
